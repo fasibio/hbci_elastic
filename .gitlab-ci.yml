@@ -1,0 +1,55 @@
+variables:
+   IMAGE_NAME: fasibio/hbci-elastic
+   SONAR_NAME: fasibio_hbci-elastic_
+   SONAR_HOST: https://sonar.server2.fasibio.de
+
+# sonar upload
+uploadSonarqube: 
+  image: ciricihq/gitlab-sonar-scanner
+  stage: sonarqube
+  script:
+    - sonar-scanner -Dsonar.projectKey=${SONAR_NAME}${CI_COMMIT_REF_NAME} -Dsonar.sources=. -Dsonar.host.url=${SONAR_HOST} -Dsonar.login=$sonarqubelogin
+  only: 
+    - main
+  tags:
+    - dockerfasibio
+  artifacts: 
+    paths: 
+      - ./cov.out
+
+# build binary
+buildBin: 
+  stage: buildBin
+  only:
+    - main
+  tags:
+    - dockerfasibio
+  image: openjdk:17-alpine
+  script: 
+    - ./gradlew build
+  artifacts:
+    paths:
+      - build/libs/hbci-app-0.0.1-SNAPSHOT.jar
+    expire_in: 1 day
+
+# build latest stable version of docker image 
+buildImageMasterAndPush: 
+  stage: buildPushImage
+  only:
+    - main
+  tags:
+    - dockerfasibio
+  image: docker
+  script: 
+    - docker pull ${IMAGE_NAME}:latest || true
+    - docker build --pull --cache-from ${IMAGE_NAME}:latest --build-arg buildNumber=${CI_PIPELINE_IID} -t ${IMAGE_NAME}:${CI_PIPELINE_IID} .
+    - docker login -u ${dockerhubuser} -p ${dockerhubpassword}
+    - docker tag ${IMAGE_NAME}:${CI_PIPELINE_IID} ${IMAGE_NAME}:latest
+    - docker push ${IMAGE_NAME}:${CI_PIPELINE_IID}
+    - docker push ${IMAGE_NAME}:latest
+
+stages:
+  - test
+  - sonarqube
+  - buildBin
+  - buildPushImage
