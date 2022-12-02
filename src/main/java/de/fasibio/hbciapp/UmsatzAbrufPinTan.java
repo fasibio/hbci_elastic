@@ -8,6 +8,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.Scanner;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.kapott.hbci.GV.HBCIJob;
 import org.kapott.hbci.GV_Result.GVRKUms;
@@ -106,15 +107,15 @@ public class UmsatzAbrufPinTan {
         return result;
     }
 
-    public void collect(String kontoNumber) throws Exception {
-        this.collectData(kontoNumber, null);
+    public void collect(String kontoNumber, Boolean fakeSaldo) throws Exception {
+        this.collectData(kontoNumber, null, fakeSaldo);
     }
 
-    public void collect(String kontoNumber, Date startDate) throws Exception {
-        this.collectData(kontoNumber, startDate);
+    public void collect(String kontoNumber, Date startDate, Boolean fakeSaldo) throws Exception {
+        this.collectData(kontoNumber, startDate, fakeSaldo);
     }
 
-    private void collectData(String kontoNumber, Date startDate) throws Exception {
+    private void collectData(String kontoNumber, Date startDate, Boolean fakeSaldo) throws Exception {
 
         // Das Handle ist die eigentliche HBCI-Verbindung zum Server
         HBCIHandler handle = null;
@@ -167,7 +168,8 @@ public class UmsatzAbrufPinTan {
 
             Value s = saldoResult.getEntries()[0].ready.value;
 
-            log.info("Saldo", "saldo", s.getLongValue(), "saldo_human", s.toString());
+            log.info("Saldo", "saldo", fakeSaldo ? getNextFakeSaldo() : s.getLongValue(), "saldo_human",
+                    fakeSaldo ? (getNextFakeSaldo() / 100) + "€" : s.toString());
 
             // Das Ergebnis des Jobs koennen wir auf "GVRKUms" casten. Jobs des Typs
             // "KUmsAll"
@@ -192,15 +194,15 @@ public class UmsatzAbrufPinTan {
                 // Ausgeben der Umsatz-Zeile
                 log.info("Umsatzzeile",
                         "werstellung_date", buchung.valuta.toInstant().toString(),
-                        "werstellung", buchung.value.getLongValue(),
-                        "werstellung_eur", buchung.value.getLongValue() / 100,
+                        "werstellung", fakeSaldo ? getNextFakeSaldo() : buchung.value.getLongValue(),
+                        "werstellung_eur", fakeSaldo ? getNextFakeSaldo() / 100 : buchung.value.getLongValue() / 100,
                         "is_positive", buchung.value.getLongValue() > 0,
-                        "werstellung_human", buchung.value.toString(),
+                        "werstellung_human", fakeSaldo ? (getNextFakeSaldo() / 100) + "€" : buchung.value.toString(),
                         "werstellung_useage", zweckStr,
                         "buchung_date", buchung.bdate.toInstant().toString(),
                         "buchung_id", buchung.id,
-                        "saldo", buchung.saldo.value.getLongValue(),
-                        "saldo_human", buchung.saldo.value.toString());
+                        "saldo", fakeSaldo ? getNextFakeSaldo() : buchung.saldo.value.getLongValue(),
+                        "saldo_human", fakeSaldo ? (getNextFakeSaldo() / 100) + "€" : buchung.saldo.value.toString());
             }
         } finally {
             // Sicherstellen, dass sowohl Passport als auch Handle nach Beendigung
@@ -212,6 +214,10 @@ public class UmsatzAbrufPinTan {
                 passport.close();
         }
 
+    }
+
+    private long getNextFakeSaldo() {
+        return ThreadLocalRandom.current().nextInt(-5000, 5000) * 100;
     }
 
     /**

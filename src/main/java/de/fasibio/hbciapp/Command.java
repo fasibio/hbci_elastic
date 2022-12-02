@@ -1,8 +1,10 @@
 package de.fasibio.hbciapp;
 
 import java.io.File;
-import java.sql.Date;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentMap;
@@ -37,6 +39,8 @@ public class Command implements Callable<Integer> {
     @Option(names = { "--konto", "-k" }, description = "Bank online userid")
     static String konto;
 
+    @Option(names = { "--fake-data" }, description = "Use Fake Saldo (Presentation Mode)")
+    static boolean fakeData;
     @Option(names = {
         "--funk_connectionKey" }, description = "Shared Secret to connect to FunkServer", defaultValue = "changeMe7894561323")
     static String funk_ConnectionKey;
@@ -47,11 +51,12 @@ public class Command implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-      DB db = DBMaker.fileDB("loadInfo.db").make();
+      Files.createDirectories(Paths.get("./db"));
+
+      DB db = DBMaker.fileDB("./db/loadInfo.db").make();
       try {
 
         ConcurrentMap map = db.hashMap("databasereaer").createOrOpen();
-
         String DbKey = this.globalCommands.blz + "_" + this.globalCommands.userid + "_" + this.konto;
 
         FunkAgent.initInstance(funk_url, funk_ConnectionKey);
@@ -60,9 +65,9 @@ public class Command implements Callable<Integer> {
 
         String lastReadDate = (String) map.get(DbKey);
         if (lastReadDate == null) {
-          umsatzCaller.collect(this.konto);
+          umsatzCaller.collect(this.konto, fakeData);
         } else {
-          umsatzCaller.collect(this.konto, Date.from(Instant.parse(lastReadDate)));
+          umsatzCaller.collect(this.konto, Date.from(Instant.parse(lastReadDate)), fakeData);
         }
         map.put(DbKey, Instant.now().toString());
       } finally {
