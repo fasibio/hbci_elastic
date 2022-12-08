@@ -30,13 +30,13 @@ import org.springframework.stereotype.Service;
 
 /**
  * Demo zum Abruf von Umsaetzen per PIN/TAN-Verfahren.
- * 
+ *
  * Die folgende Demo zeigt mit dem minimal noetigen Code, wie eine
  * Umsatz-Abfrage
  * fuer ein Konto durchgefuehrt werden kann. Hierzu wird der Einfachheit halber
  * das Verfahren PIN/TAN verwendet, da es von den meisten Banken unterstuetzt
  * wird.
- * 
+ *
  * Trage vor dem Ausfuehren des Programms die Zugangsdaten zu deinem Konto ein.
  */
 public class UmsatzAbrufPinTan {
@@ -351,19 +351,20 @@ public class UmsatzAbrufPinTan {
                 // chipTAN optisch, photoTAN,...)
                 // I.d.R. ist das eine dreistellige mit "9" beginnende Ziffer
                 case NEED_PT_SECMECH:
-
                     // Als Parameter werden die verfuegbaren TAN-Verfahren uebergeben.
                     // Der Aufbau des String ist wie folgt:
                     // <code1>:<name1>|<code2>:<name2>|...
                     // Bsp:
-                    // 911:smsTAN|920:chipTAN optisch|955:photoTAN
+                    // 911:smsTAN|920:chipTAN optisch|955:photoTAN|900:SecurePlus
+                    // Consors SecurePlus von https://wissen.consorsbank.de/t5/SecurePlus/SecurePlus-mit-aqbanking-Umsatzabruf-nicht-m%C3%B6glich/td-p/88747?poll=1669380098586
                     // String options = retData.toString();
 
                     // Der Callback muss den Code des zu verwendenden TAN-Verfahrens
                     // zurueckliefern
                     // In "code" muss der 3-stellige Code des vom User gemaess obigen
                     // Optionen ausgewaehlte Verfahren eingetragen werden
-                    String code = "";
+                    System.out.println("[NEET_PT_SECMECH] TAN-Verfahren: " + retData);
+                    String code = "9xx";
                     retData.replace(0, retData.length(), code);
                     break;
 
@@ -424,8 +425,9 @@ public class UmsatzAbrufPinTan {
                     // auszugehen, dass nur eine moegliche Option existiert. In dem
                     // Fall ist keine Auswahl noetig und "retData" kann unveraendert
                     // bleiben
-                    String alias = null;
-                    retData.replace(0, retData.length(), alias);
+                    System.out.println("[NEED_PT_TANMEDIA] TAN-Medien: " + retData);
+                    // String alias = null;
+                    // retData.replace(0, retData.length(), alias);
 
                     break;
                 //
@@ -457,7 +459,7 @@ public class UmsatzAbrufPinTan {
 
     /**
      * Beendet das Programm mit der angegebenen Fehler-Meldung.
-     * 
+     *
      * @param msg die Meldung.
      */
     private static void error(String msg) {
