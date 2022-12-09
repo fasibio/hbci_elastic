@@ -2,24 +2,24 @@
 
 version: "3"
 
-services: 
-  funk-server: # the funk-server to collect all log information and write them to the elasticsearchdb 
-    networks: 
+services:
+  funk-server: # the funk-server to collect all log information and write them to the elasticsearchdb
+    networks:
       - elk
-    ports: 
+    ports:
       - 3000:3000
     image: fasibio/funk_server:latest
-    environment: 
+    environment:
       ELASTICSEARCH_USERNAME: elastic
       ELASTICSEARCH_PASSWORD: MagicWord
       ELASTICSEARCH_URL: http://elasticsearch:9200
       CONNECTION_KEY: changeMe7894561323 # Shared Key you have to set on each agent...
       USE_ILM_POLICY: "false"
-    labels: 
-      "funk.log": "false" #do not log this container! IMPORTANT no ending loop!!! 
+    labels:
+      "funk.log": "false" #do not log this container! IMPORTANT no ending loop!!!
 
   # funk-agent: # the funk agent to collect the logs
-  #   networks: 
+  #   networks:
   #     - elk
   #   image: fasibio/funk_agent:latest
   #   volumes:
@@ -28,11 +28,11 @@ services:
   #     FUNK_SERVER: ws://funk-server:3000 # the adress to the funk-server it can be external too (is a websocket so ws instance of http and wss instance of https)
   #     CONNECTION_KEY: changeMe7894561323 # The Shared Key configured at your funk-server installation
   #     ENABLE_GEO_IP_INJECT: "true" # Allow this agent to inject geo ip information and the label key funk.log.geodatafromip	 is now enabled see at testhttpd service
-  #   labels: 
+  #   labels:
   #     "funk.searchindex": "funk_agent" # The index at your elasticseach db to collect logs from this container
 
   kibana: #Your Kibanasystem
-    networks: 
+    networks:
       - elk
     ports:
       - 5601:5601
@@ -41,30 +41,30 @@ services:
       ELASTICSEARCH_USERNAME: elastic
       ELASTICSEARCH_PASSWORD: MagicWord
       ELASTICSEARCH_URL: http://elasticsearch:9200
-    labels: 
+    labels:
       "funk.log.staticcontent": "{\"usage\": \"loganalyze\"}" # Static information to log application cases for example staging
       "funk.searchindex": "kibana" # The index at your elasticseach db to collect logs from this container
-      
   elasticsearch:  #Your Elasticsearchdb
+    platform: linux/x86_64
     image: elasticsearch:7.2.0
-    ports: 
+    ports:
       - 127.0.0.1:9200:9200
       - 9300:9300
-    networks: 
+    networks:
       - elk
-    environment: 
+    environment:
       ELASTIC_USERNAME: elastic
       ELASTIC_PASSWORD: MagicWord
       xpack.security.enabled: "true"
       xpack.ml.enabled: "true"
       xpack.watcher.enabled: "true"
       discovery.type: "single-node"
-    labels: 
+    labels:
       "funk.log": "false" #do not log this container
     volumes:
       - esdata01:/usr/share/elasticsearch/data
 volumes:
-  esdata01: 
+  esdata01:
     driver: local
 
 networks:
